@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <numeric>
-#include <ranges>
+#include <set>
 
 #include "utils.h"
 #include "debug.h"
@@ -110,8 +110,6 @@ private:
 public:
 	Grid(std::string fname) {
 		debugger.setName("Grid");
-		debugger.enable();
-
 		debugger.info("Reading file: " + fname);
 
 		std::ifstream file(fname);
@@ -199,8 +197,8 @@ public:
 
 	std::string run() override {
 		std::string p1 = part1();
-		//std::string part2 = part2();
-		return p1;
+		std::string p2 = part2();
+		return utils::join({p1, p2}, '\n');
 	}
 
 	std::string part1() {
@@ -246,9 +244,39 @@ public:
 		std::vector<Number> numbers = grid.getNumbers();
 		std::vector<Symbol> symbols = grid.getSymbols();
 
+		unsigned long long sum = 0;
+
 		for (Symbol s : symbols) {
 			// if the symbol is a '*', then we need to make sure it is next to 2 numbers
+			if (s.getValue() == '*') {
+				std::vector<std::pair<int, int>> surroundingPositions = s.getSurroundingPositions();
+				std::vector<Number> surroundingNumbers;
+				for (Number n : numbers) {
+					for (std::pair<int, int> pos : surroundingPositions) {
+						if (n.contains(pos)) {
+							surroundingNumbers.push_back(n);
+							break;
+						}
+					}
+				}
+				if (surroundingNumbers.size() < 2) {
+					continue;
+				}
+
+				if (surroundingNumbers.size() > 2) {
+					debugger.warn("More than 2 numbers next to a '*'");
+					for (Number n : surroundingNumbers) {
+						std::cout << n.value << ' ';
+					}
+					std::cout << std::endl;
+				}
+
+				unsigned long long product = std::accumulate(surroundingNumbers.begin(), surroundingNumbers.end(), 1, [](unsigned long long acc, Number n) { return acc * n.value; });
+				sum += product;
+			}
 		}
+
+		return "\tPart 2: " + std::to_string(sum);
 	}
 
 };
